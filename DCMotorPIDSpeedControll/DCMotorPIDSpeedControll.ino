@@ -10,10 +10,10 @@ const int hall_intterup_pin = 0; // digital 2
 double hall_counter = 0;
 double rpm = 0;
 unsigned long last_time = 0;
-const double hall_sample_rate = 100;
+const unsigned long hall_sample_rate = 123456; //1.23456 second
 
-double pwm = 0,setpoint = 1500;
-double Kp=5, Ki=3, Kd=1;
+double pwm = 0,setpoint = 2136; // 2221 RPM
+double Kp=0.1, Ki=0.07, Kd=0.01;
 PID pid(&rpm, &pwm, &setpoint, Kp, Ki, Kd,100000,ON,REVERSE,0,255);
 
 void setup()
@@ -31,22 +31,23 @@ void setup()
   digitalWrite(motor_pin_1,LOW);
   digitalWrite(motor_pin_2,HIGH);
   
-  last_time = millis();
+  last_time = micros();
 }
 
 void loop()
 {
-  if((millis() - last_time) >= hall_sample_rate){
-    rpm = hall_counter * 60.0f * (1000.0f/hall_sample_rate);
+  
+  if((micros() - last_time) >= hall_sample_rate){
+    rpm = ((hall_counter * (1000000.0f/(double)(micros()-last_time))) * 60);
     hall_counter = 0;
-    last_time = millis();
+    last_time = micros();
     
     if(DEBUG){
-      Serial.println(rpm);
+      Serial.print(rpm);
+      Serial.print(",");
+      Serial.println(pwm);
     }
   }
-  
-  
   pid.Computing();
   analogWrite(enable,pwm);
   
@@ -54,5 +55,5 @@ void loop()
 }
 
 void HallISR(){
-  hall_counter++;
+  ++hall_counter;
 }
